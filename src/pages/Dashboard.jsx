@@ -3,433 +3,418 @@ import StatCard from "../components/StatCard"
 
 function Dashboard() {
   const [activities, setActivities] = useState([])
+  const [weeklyTarget, setWeeklyTarget] = useState(0)
 
-  // Weekly target
-  const [weeklyTarget, setWeeklyTarget] = useState(() => {
-    const savedTarget = localStorage.getItem("weeklyTarget")
-    return savedTarget ? Number(savedTarget) : 20
-  })
-
-  // Load activities
-  const loadActivities = () => {
+  const loadData = () => {
     const savedActivities =
       JSON.parse(localStorage.getItem("activities")) || []
 
+    const savedTarget =
+      Number(localStorage.getItem("weeklyTarget")) || 0
+
     setActivities(savedActivities)
+    setWeeklyTarget(savedTarget)
   }
 
   useEffect(() => {
-    loadActivities()
+    loadData()
 
-    const handleTargetUpdate = () => {
-      const savedTarget = localStorage.getItem("weeklyTarget")
+    const handleUpdate = () => loadData()
 
-      if (savedTarget) {
-        setWeeklyTarget(Number(savedTarget))
-      }
-    }
+    window.addEventListener(
+      "activitiesUpdated",
+      handleUpdate
+    )
 
-    window.addEventListener("storage", loadActivities)
-    window.addEventListener("activitiesUpdated", loadActivities)
-    window.addEventListener("targetUpdated", handleTargetUpdate)
+    window.addEventListener("storage", handleUpdate)
 
     return () => {
-      window.removeEventListener("storage", loadActivities)
-      window.removeEventListener("activitiesUpdated", loadActivities)
-      window.removeEventListener("targetUpdated", handleTargetUpdate)
+      window.removeEventListener(
+        "activitiesUpdated",
+        handleUpdate
+      )
+
+      window.removeEventListener(
+        "storage",
+        handleUpdate
+      )
     }
   }, [])
 
-  // Total footprint
   const totalFootprint = activities.reduce(
-    (total, activity) =>
-      total + Number(activity.carbonEmission || 0),
+    (sum, activity) =>
+      sum + Number(activity.carbonEmission || 0),
     0
   )
 
-  // Current week's Monday
-  const today = new Date()
-  const day = today.getDay()
+  // Current week starts Monday
+  const now = new Date()
+  const day = now.getDay()
+  const diff = day === 0 ? 6 : day - 1
 
-  const difference = day === 0 ? 6 : day - 1
-
-  const weekStart = new Date(today)
-
-  weekStart.setDate(today.getDate() - difference)
+  const weekStart = new Date(now)
+  weekStart.setDate(now.getDate() - diff)
   weekStart.setHours(0, 0, 0, 0)
 
-  // This week's footprint
-  const thisWeekFootprint = activities
-    .filter((activity) => {
-      const activityDate = new Date(activity.date)
+  const weeklyActivities = activities.filter(
+    (activity) =>
+      new Date(activity.date) >= weekStart
+  )
 
-      return activityDate >= weekStart
-    })
-    .reduce(
-      (total, activity) =>
-        total + Number(activity.carbonEmission || 0),
-      0
-    )
+  const weeklyTotal = weeklyActivities.reduce(
+    (sum, activity) =>
+      sum + Number(activity.carbonEmission || 0),
+    0
+  )
+
+  const weeklyProgress =
+    weeklyTarget > 0
+      ? Math.min(
+          (weeklyTotal / weeklyTarget) * 100,
+          100
+        )
+      : 0
+
+  const targetExceeded =
+    weeklyTarget > 0 && weeklyTotal > weeklyTarget
 
   // Category totals
   const categoryTotals = {}
 
   activities.forEach((activity) => {
-    const category = activity.activityName || "Other"
-
-    if (!categoryTotals[category]) {
-      categoryTotals[category] = 0
+    if (!categoryTotals[activity.activityName]) {
+      categoryTotals[activity.activityName] = 0
     }
 
-    categoryTotals[category] += Number(
-      activity.carbonEmission || 0
-    )
+    categoryTotals[activity.activityName] +=
+      Number(activity.carbonEmission || 0)
   })
 
-  // Weekly progress
-  const progressPercentage =
-    weeklyTarget > 0
-      ? (thisWeekFootprint / weeklyTarget) * 100
-      : 0
-
-  const progressWidth = Math.min(progressPercentage, 100)
-
-  const targetExceeded = thisWeekFootprint > weeklyTarget
-
-  const remaining =
-    weeklyTarget - thisWeekFootprint
+  const categoryData = Object.entries(categoryTotals).sort(
+    (a, b) => b[1] - a[1]
+  )
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-[#f5fbf8] via-white to-[#eef8ff] px-6 py-8 pt-24 md:ml-60">
+    <main className="min-h-screen bg-[#f5fbf8] pb-24 pt-20 md:ml-60 md:pb-8">
+      <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
 
-      <div className="mx-auto max-w-7xl">
-
-        {/* ================= HEADER ================= */}
-
-        <div className="relative mb-8 overflow-hidden rounded-3xl border border-emerald-100 bg-gradient-to-r from-emerald-50 via-white to-blue-50 p-8 shadow-sm">
-
-          <div className="relative z-10">
-
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-emerald-100 px-4 py-2 text-sm font-semibold text-emerald-700">
-              🌱 Small actions make a difference
-            </div>
-
-            <h1 className="text-3xl font-bold text-slate-800 md:text-4xl">
-              Your{" "}
-              <span className="text-emerald-600">
-                Carbon
-              </span>{" "}
-              Footprint
-            </h1>
-
-            <p className="mt-3 max-w-2xl text-slate-500">
-              Track your daily activities and understand your
-              environmental impact.
+        {/* Hero */}
+        <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-500 to-green-600 p-5 text-white shadow-sm sm:p-7 lg:p-9">
+          
+          <div className="relative z-10 max-w-2xl">
+            <p className="text-sm font-semibold text-emerald-50">
+              🌱 Welcome to CarbonTrack
             </p>
 
+            <h1 className="mt-2 text-2xl font-bold leading-tight sm:text-3xl lg:text-4xl">
+              Track your carbon footprint.
+              <br className="hidden sm:block" />
+              Make greener choices.
+            </h1>
+
+            <p className="mt-3 max-w-xl text-sm leading-6 text-emerald-50 sm:text-base">
+              Turn your everyday activities into meaningful environmental insights.
+            </p>
+
+            <a
+              href="/activity"
+              className="mt-5 inline-flex items-center rounded-xl bg-white px-5 py-3 text-sm font-bold text-emerald-600 shadow-sm transition hover:bg-emerald-50"
+            >
+              ＋ Log Activity
+            </a>
           </div>
 
-          {/* Nature decoration */}
-          <div className="absolute right-8 top-5 text-7xl opacity-20">
+          <div className="absolute -right-5 -top-5 text-7xl opacity-20 sm:text-9xl">
+            🌍
+          </div>
+
+          <div className="absolute -bottom-8 right-20 text-6xl opacity-10">
             🌿
           </div>
+        </section>
 
-          <div className="absolute -bottom-10 right-20 h-32 w-32 rounded-full bg-emerald-100 opacity-50" />
-
-        </div>
-
-
-        {/* ================= STAT CARDS ================= */}
-
-        <div className="grid gap-5 md:grid-cols-3">
-
+        {/* Stats */}
+        <section className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <StatCard
             title="Total Footprint"
-            value={totalFootprint.toFixed(2)}
-            unit="kg CO₂"
-            icon="🌿"
+            value={`${totalFootprint.toFixed(2)} kg`}
+            subtitle="All recorded activities"
+            icon="🌍"
           />
 
           <StatCard
             title="This Week"
-            value={thisWeekFootprint.toFixed(2)}
-            unit="kg CO₂"
-            icon="📊"
+            value={`${weeklyTotal.toFixed(2)} kg`}
+            subtitle="Current week's footprint"
+            icon="📅"
+          />
+
+          <StatCard
+            title="Activities"
+            value={activities.length}
+            subtitle="Total activities logged"
+            icon="📋"
           />
 
           <StatCard
             title="Weekly Target"
-            value={weeklyTarget.toFixed(2)}
-            unit="kg CO₂"
+            value={
+              weeklyTarget > 0
+                ? `${weeklyTarget.toFixed(1)} kg`
+                : "Not Set"
+            }
+            subtitle="Your weekly goal"
             icon="🎯"
           />
+        </section>
 
-        </div>
+        {/* Weekly Progress + Quick Actions */}
+        <section className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
 
+          {/* Weekly Progress */}
+          <div className="rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm sm:p-6">
+            
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <h2 className="text-lg font-bold text-slate-800">
+                  Weekly Progress
+                </h2>
 
-        {/* ================= WEEKLY PROGRESS ================= */}
+                <p className="mt-1 text-sm text-slate-500">
+                  Track your current week's CO₂ usage.
+                </p>
+              </div>
 
-        <div className="mt-6 rounded-2xl border border-emerald-100 bg-white p-6 shadow-sm">
-
-          <div className="flex flex-col gap-5 md:flex-row md:items-center">
-
-            {/* Percentage Circle */}
-
-            <div
-              className={`flex h-28 w-28 shrink-0 items-center justify-center rounded-full border-[10px] ${
-                targetExceeded
-                  ? "border-red-100"
-                  : "border-emerald-100"
-              }`}
-            >
-
-              <span
-                className={`text-2xl font-bold ${
-                  targetExceeded
-                    ? "text-red-500"
-                    : "text-emerald-600"
-                }`}
-              >
-                {Math.round(progressPercentage)}%
-              </span>
-
+              {weeklyTarget > 0 && (
+                <span
+                  className={`w-fit rounded-full px-3 py-1 text-xs font-bold ${
+                    targetExceeded
+                      ? "bg-red-100 text-red-600"
+                      : "bg-emerald-100 text-emerald-700"
+                  }`}
+                >
+                  {targetExceeded
+                    ? "⚠ Target Exceeded"
+                    : "✓ Within Target"}
+                </span>
+              )}
             </div>
 
+            {weeklyTarget > 0 ? (
+              <>
+                <div className="mt-6 flex items-end justify-between gap-4">
+                  <div>
+                    <p className="text-3xl font-bold text-slate-800">
+                      {weeklyTotal.toFixed(2)}
+                    </p>
 
-            {/* Progress Information */}
+                    <p className="text-sm text-slate-500">
+                      kg CO₂ used
+                    </p>
+                  </div>
 
-            <div className="flex-1">
-
-              <div className="flex flex-col justify-between gap-3 md:flex-row">
-
-                <div>
-
-                  <h2 className="text-xl font-bold text-slate-800">
-                    Weekly Progress
-                  </h2>
-
-                  <p className="mt-1 text-sm text-slate-500">
-                    {thisWeekFootprint.toFixed(2)} kg of{" "}
-                    {weeklyTarget.toFixed(2)} kg CO₂ used this week
+                  <p className="text-sm font-semibold text-slate-500">
+                    of {weeklyTarget.toFixed(2)} kg
                   </p>
-
                 </div>
 
+                <div className="mt-4 h-4 overflow-hidden rounded-full bg-slate-100">
+                  <div
+                    className={`h-full rounded-full transition-all ${
+                      targetExceeded
+                        ? "bg-red-500"
+                        : "bg-gradient-to-r from-emerald-400 to-green-500"
+                    }`}
+                    style={{
+                      width: `${weeklyProgress}%`,
+                    }}
+                  />
+                </div>
 
-                {/* Status */}
+                <p className="mt-2 text-right text-xs text-slate-500">
+                  {weeklyProgress.toFixed(0)}% used
+                </p>
+              </>
+            ) : (
+              <div className="mt-6 rounded-xl bg-emerald-50 p-5 text-center">
+                <div className="text-3xl">🎯</div>
 
-                {targetExceeded ? (
-                  <span className="inline-flex w-fit items-center gap-2 rounded-full bg-red-50 px-4 py-2 text-sm font-semibold text-red-500">
-                    ⚠️ Target exceeded
-                  </span>
-                ) : (
-                  <span className="inline-flex w-fit items-center gap-2 rounded-full bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-600">
-                    🌱 On track · Keep going!
-                  </span>
-                )}
+                <p className="mt-2 font-semibold text-slate-700">
+                  No weekly target set
+                </p>
 
+                <a
+                  href="/target"
+                  className="mt-3 inline-block text-sm font-bold text-emerald-600 hover:text-emerald-700"
+                >
+                  Set Weekly Target →
+                </a>
               </div>
-
-
-              {/* Progress Bar */}
-
-              <div className="mt-5 h-4 overflow-hidden rounded-full bg-slate-100">
-
-                <div
-                  className={`h-full rounded-full transition-all duration-500 ${
-                    targetExceeded
-                      ? "bg-red-400"
-                      : "bg-gradient-to-r from-emerald-400 to-emerald-500"
-                  }`}
-                  style={{
-                    width: `${progressWidth}%`,
-                  }}
-                />
-
-              </div>
-
-
-              {/* Message */}
-
-              <div className="mt-3 text-sm">
-
-                {targetExceeded ? (
-                  <p className="font-medium text-red-500">
-                    You exceeded your target by{" "}
-                    {Math.abs(remaining).toFixed(2)} kg CO₂.
-                  </p>
-                ) : (
-                  <p className="font-medium text-emerald-600">
-                    You have{" "}
-                    {remaining.toFixed(2)} kg CO₂ remaining
-                    this week.
-                  </p>
-                )}
-
-              </div>
-
-            </div>
-
+            )}
           </div>
 
-        </div>
+          {/* Quick Actions */}
+          <div className="rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm sm:p-6">
+            <h2 className="text-lg font-bold text-slate-800">
+              Quick Actions
+            </h2>
 
+            <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <a
+                href="/activity"
+                className="rounded-xl border border-emerald-100 bg-emerald-50 p-4 transition hover:-translate-y-1 hover:shadow-sm"
+              >
+                <div className="text-2xl">➕</div>
+                <p className="mt-2 font-bold text-slate-800">
+                  Log Activity
+                </p>
+                <p className="mt-1 text-xs text-slate-500">
+                  Add a new activity
+                </p>
+              </a>
 
-        {/* ================= CATEGORY BREAKDOWN ================= */}
+              <a
+                href="/target"
+                className="rounded-xl border border-blue-100 bg-blue-50 p-4 transition hover:-translate-y-1 hover:shadow-sm"
+              >
+                <div className="text-2xl">🎯</div>
+                <p className="mt-2 font-bold text-slate-800">
+                  Set Target
+                </p>
+                <p className="mt-1 text-xs text-slate-500">
+                  Manage weekly goal
+                </p>
+              </a>
 
-        <div className="mt-6 rounded-2xl border border-blue-100 bg-white p-6 shadow-sm">
-
-          <div className="mb-6 flex items-center gap-4">
-
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-2xl">
-              📊
+              <a
+                href="/history"
+                className="rounded-xl border border-purple-100 bg-purple-50 p-4 transition hover:-translate-y-1 hover:shadow-sm sm:col-span-2"
+              >
+                <div className="text-2xl">📋</div>
+                <p className="mt-2 font-bold text-slate-800">
+                  View History
+                </p>
+                <p className="mt-1 text-xs text-slate-500">
+                  Review and filter your activities
+                </p>
+              </a>
             </div>
+          </div>
+        </section>
 
+        {/* Category Breakdown */}
+        <section className="mt-6 rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm sm:p-6">
+          
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
-
-              <h2 className="text-xl font-bold text-slate-800">
-                Carbon Footprint by Category
+              <h2 className="text-lg font-bold text-slate-800">
+                Category Breakdown
               </h2>
 
-              <p className="text-sm text-slate-500">
-                Breakdown of your total CO₂ emissions.
+              <p className="mt-1 text-sm text-slate-500">
+                CO₂ emissions by activity type.
               </p>
-
             </div>
 
+            <span className="w-fit rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+              {categoryData.length} categories
+            </span>
           </div>
 
+          {categoryData.length > 0 ? (
+            <div className="mt-5 overflow-x-auto">
+              <table className="min-w-[600px] w-full">
+                <thead>
+                  <tr className="border-b border-slate-100">
+                    <th className="px-3 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">
+                      Category
+                    </th>
 
-          {Object.keys(categoryTotals).length === 0 ? (
+                    <th className="px-3 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">
+                      CO₂ Emission
+                    </th>
 
-            <div className="rounded-xl bg-slate-50 p-8 text-center">
+                    <th className="px-3 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">
+                      Share
+                    </th>
+                  </tr>
+                </thead>
 
-              <div className="text-4xl">
-                🌱
-              </div>
+                <tbody className="divide-y divide-slate-100">
+                  {categoryData.map(
+                    ([category, emission]) => {
+                      const share =
+                        totalFootprint > 0
+                          ? (emission /
+                              totalFootprint) *
+                            100
+                          : 0
 
-              <p className="mt-3 font-medium text-slate-600">
-                No activities logged yet.
-              </p>
+                      return (
+                        <tr
+                          key={category}
+                          className="hover:bg-emerald-50/40"
+                        >
+                          <td className="px-3 py-4 font-semibold text-slate-700">
+                            {category}
+                          </td>
 
-              <p className="mt-1 text-sm text-slate-400">
-                Go to Log Activity to add your first activity.
-              </p>
+                          <td className="px-3 py-4 font-semibold text-emerald-600">
+                            {emission.toFixed(2)} kg
+                          </td>
 
+                          <td className="px-3 py-4">
+                            <div className="flex items-center gap-3">
+                              <div className="h-2 w-24 overflow-hidden rounded-full bg-slate-100">
+                                <div
+                                  className="h-full rounded-full bg-emerald-500"
+                                  style={{
+                                    width: `${share}%`,
+                                  }}
+                                />
+                              </div>
+
+                              <span className="text-xs font-medium text-slate-500">
+                                {share.toFixed(1)}%
+                              </span>
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    }
+                  )}
+                </tbody>
+              </table>
             </div>
-
           ) : (
+            <div className="mt-5 rounded-xl bg-emerald-50 p-8 text-center">
+              <div className="text-4xl">🌱</div>
 
-            <div className="overflow-hidden rounded-xl border border-slate-100">
-
-              {/* Table Header */}
-
-              <div className="grid grid-cols-2 bg-slate-50 px-5 py-4 text-sm font-semibold uppercase text-slate-500">
-
-                <span>
-                  Category
-                </span>
-
-                <span>
-                  CO₂ Emission
-                </span>
-
-              </div>
-
-
-              {/* Categories */}
-
-              {Object.entries(categoryTotals).map(
-                ([category, emission]) => {
-
-                  const percentage =
-                    totalFootprint > 0
-                      ? (emission / totalFootprint) * 100
-                      : 0
-
-                  return (
-
-                    <div
-                      key={category}
-                      className="border-t border-slate-100 px-5 py-5"
-                    >
-
-                      <div className="grid grid-cols-2 items-center">
-
-                        <span className="font-medium text-slate-700">
-                          {category}
-                        </span>
-
-                        <span className="font-semibold text-slate-700">
-                          {emission.toFixed(2)} kg CO₂
-                        </span>
-
-                      </div>
-
-
-                      {/* Category Progress */}
-
-                      <div className="mt-3 flex items-center gap-3">
-
-                        <div className="h-2 flex-1 overflow-hidden rounded-full bg-slate-100">
-
-                          <div
-                            className="h-full rounded-full bg-emerald-400"
-                            style={{
-                              width: `${percentage}%`,
-                            }}
-                          />
-
-                        </div>
-
-                        <span className="w-12 text-right text-xs font-medium text-slate-400">
-                          {percentage.toFixed(1)}%
-                        </span>
-
-                      </div>
-
-                    </div>
-
-                  )
-                }
-              )}
-
-            </div>
-
-          )}
-
-        </div>
-
-
-        {/* ================= NATURE MESSAGE ================= */}
-
-        <div className="mt-6 overflow-hidden rounded-2xl border border-emerald-100 bg-gradient-to-r from-emerald-50 to-green-50 p-6">
-
-          <div className="flex items-center gap-5">
-
-            <div className="text-5xl">
-              🌱
-            </div>
-
-            <div>
-
-              <h3 className="font-bold text-emerald-800">
-                Every small action counts
-              </h3>
-
-              <p className="mt-1 text-sm text-emerald-700">
-                Keep tracking your activities and make
-                environmentally conscious choices.
+              <p className="mt-3 font-semibold text-slate-700">
+                No activities recorded yet
               </p>
 
+              <p className="mt-1 text-sm text-slate-500">
+                Start by logging your first activity.
+              </p>
+
+              <a
+                href="/activity"
+                className="mt-4 inline-block rounded-xl bg-emerald-500 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-600"
+              >
+                Log Activity
+              </a>
             </div>
+          )}
+        </section>
 
-          </div>
-
+        {/* Footer message */}
+        <div className="mt-6 pb-4 text-center">
+          <p className="text-sm text-slate-500">
+            🌿 Small actions make a big impact.
+          </p>
         </div>
-
       </div>
-
     </main>
   )
 }

@@ -2,68 +2,85 @@ import ActivityForm from "../components/ActivityForm"
 
 function Activity() {
   return (
-    <main className="min-h-screen bg-gradient-to-br from-[#f5fbf8] via-white to-[#eef8ff] px-6 py-8 pt-24 md:ml-60">
+    <main className="min-h-screen bg-[#f5fbf8] pb-24 pt-20 md:ml-60 md:pb-8">
+      <div className="mx-auto w-full max-w-4xl px-4 sm:px-6 lg:px-8">
 
-      <div className="mx-auto max-w-5xl">
-
-        {/* Header */}
-        <div className="mb-8">
-          <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-emerald-100 px-4 py-2 text-sm font-semibold text-emerald-700">
-            🌱 Track your impact
-          </div>
-
-          <h1 className="text-3xl font-bold text-slate-800">
-            Log an <span className="text-emerald-600">Activity</span>
-          </h1>
-
-          <p className="mt-2 text-slate-500">
-            Add your daily activity and calculate its carbon footprint.
-          </p>
-        </div>
-
-        {/* Activity Form */}
-        <div className="rounded-2xl border border-emerald-100 bg-white p-6 shadow-sm md:p-8">
-
-          <div className="mb-6 flex items-center gap-4">
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-3xl">
-              🌿
-            </div>
-
+        {/* Page Header */}
+        <div className="mb-6 sm:mb-8">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            
             <div>
-              <h2 className="text-xl font-bold text-slate-800">
-                Add New Activity
-              </h2>
+              <p className="text-sm font-semibold text-emerald-600">
+                🌱 Track your impact
+              </p>
 
-              <p className="text-sm text-slate-500">
-                Enter your activity details below.
+              <h1 className="mt-1 text-2xl font-bold text-slate-800 sm:text-3xl">
+                Log Activity
+              </h1>
+
+              <p className="mt-2 text-sm leading-6 text-slate-500 sm:text-base">
+                Add your daily activities and calculate their carbon footprint.
               </p>
             </div>
+
+            <div className="hidden rounded-2xl bg-emerald-50 px-5 py-4 text-center sm:block">
+              <div className="text-3xl">🌍</div>
+              <p className="mt-1 text-xs font-semibold text-emerald-700">
+                Every action counts
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Card */}
+        <div className="rounded-2xl border border-emerald-100 bg-white p-4 shadow-sm sm:p-6 md:p-8">
+          
+          <div className="mb-6 border-b border-slate-100 pb-5">
+            <h2 className="text-lg font-bold text-slate-800 sm:text-xl">
+              Add a new activity
+            </h2>
+
+            <p className="mt-1 text-sm text-slate-500">
+              Select an activity and enter the quantity.
+            </p>
           </div>
 
           <ActivityForm />
-
         </div>
 
-        {/* Nature Tip */}
-        <div className="mt-6 rounded-2xl border border-green-100 bg-gradient-to-r from-green-50 to-emerald-50 p-5">
-          <div className="flex gap-4">
-            <div className="text-3xl">🌱</div>
+        {/* Factors */}
+        <div className="mt-6 rounded-2xl border border-emerald-100 bg-white p-4 shadow-sm sm:p-6">
+          <h2 className="text-base font-bold text-slate-800 sm:text-lg">
+            CO₂ Factors
+          </h2>
 
-            <div>
-              <h3 className="font-semibold text-emerald-800">
-                Small actions make a difference
-              </h3>
+          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="rounded-xl bg-slate-50 p-3">
+              🚗 <span className="font-medium">Car:</span> 0.20 kg/km
+            </div>
 
-              <p className="mt-1 text-sm text-emerald-700">
-                Track your daily activities to understand your environmental
-                impact and make greener choices.
-              </p>
+            <div className="rounded-xl bg-slate-50 p-3">
+              🚌 <span className="font-medium">Bus:</span> 0.08 kg/km
+            </div>
+
+            <div className="rounded-xl bg-slate-50 p-3">
+              ✈️ <span className="font-medium">Flight:</span> 0.25 kg/km
+            </div>
+
+            <div className="rounded-xl bg-slate-50 p-3">
+              ⚡ <span className="font-medium">Electricity:</span> 0.80 kg/kWh
+            </div>
+
+            <div className="rounded-xl bg-slate-50 p-3">
+              🥗 <span className="font-medium">Veg Meal:</span> 0.50 kg
+            </div>
+
+            <div className="rounded-xl bg-slate-50 p-3">
+              🍗 <span className="font-medium">Non-Veg:</span> 2.00 kg
             </div>
           </div>
         </div>
-
       </div>
-
     </main>
   )
 }
